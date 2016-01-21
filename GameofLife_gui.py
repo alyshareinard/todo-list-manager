@@ -35,10 +35,10 @@ from array import array
 
 
 class popupwindow(object):
-    def __init__(self, master):
+    def __init__(self, master, name=None, pt_val=5, realm="work", context=None, duedate=None, repeat=None, repeat_time=None):
        
         top=self.top=tk.Toplevel(master)
-
+#        top.geometry('300x600')
         row_val=0        
         self.l=ttk.Label(top,text="Add task information").grid(column=0, row=row_val)#, sticky=(N, W, E, S))
         self.name=tk.StringVar()
@@ -46,13 +46,17 @@ class popupwindow(object):
         row_val+=1
         name_label=ttk.Label(top, text="Name: ").grid(column=0, row=row_val)
         name_entry=ttk.Entry(top, textvariable=self.name).grid(column=1, row=row_val)
+        if name!=None:
+            self.name.set(name)
 #        print("adding name: ", self.name)
+
         
         row_val+=1
         pt_val_label=ttk.Label(top, text="Point value: ").grid(column=0, row=row_val)
         self.pts=tk.StringVar()
         pt_val_entry=ttk.Entry(top, textvariable=self.pts).grid(column=1, row=row_val)
-        self.pts.set("5")
+        
+        self.pts.set(pt_val)
 
         row_val+=1
         #TODO need to make this configurable -- global variable?
@@ -60,13 +64,19 @@ class popupwindow(object):
         realm_label=ttk.Label(top, text="Realm: ").grid(column=0, row=row_val)
         self.realm=tk.StringVar(master)
         realm_menu=ttk.OptionMenu(top, self.realm, *realms)
-        self.realm.set("work")
+        if realm!=None:
+            self.realm.set(realm)
+        else:
+            self.realm.set("work")
+            
         realm_menu.grid(column=1, row=row_val)
 
         row_val+=1
         context_label=ttk.Label(top, text="Context: ").grid(column=0, row=row_val)
         self.context=tk.StringVar()
         context_entry=ttk.Entry(top, textvariable=self.context).grid(column=1, row=row_val)
+        if context!=None:
+            self.context.set(context)
 
         row_val+=1
         due_label=ttk.Label(top, text="Due date: ").grid(column=0, row=row_val)
@@ -74,13 +84,23 @@ class popupwindow(object):
         due_entry=ttk.Entry(top, textvariable=self.due).grid(column=1, row=row_val)        
 
         row_val+=1
-        repeat={"no", "yes"}
+        rpt={"no", "yes"}
         repeat_label=ttk.Label(top, text="Repeat: ").grid(column=0, row=row_val)
         self.repeat=tk.StringVar(master)
-        repeat_menu=ttk.OptionMenu(top, self.repeat, *repeat)
-        self.repeat.set("no")
-        repeat_menu.grid(column=1, row=row_val)        
+        repeat_menu=ttk.OptionMenu(top, self.repeat, *rpt)
+        if repeat!=None:
+            self.repeat.set(repeat)
+        else:
+            self.repeat.set("no")
+        repeat_menu.grid(column=1, row=row_val)
 
+        row_val+=1    
+        rpt_time_label=ttk.Label(top, text="Repeat time (days): ").grid(column=0, row=row_val)
+        self.repeat_time=tk.StringVar(master)
+        rpt_time_entry=ttk.Entry(top, textvariable=self.repeat_time).grid(column=1, row=row_val)
+        if repeat_time!=None:
+            self.repeat_time.set(repeat_time)
+        
         row_val+=1
         self.b=ttk.Button(top,text='Ok',command=self.cleanup)
         self.b.grid(column=0, row=row_val)
@@ -88,11 +108,11 @@ class popupwindow(object):
 
             
     def cleanup(self):
-        me.add_challenge_basic(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat.get())
+        me.add_challenge_basic(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat.get(), repeat_time=self.repeat_time.get())
         print("repeat? ", self.repeat.get())
         if self.repeat.get()=="yes":
             askyesno("Habit?", "Add this to the habit bank?")
-            me.add_habit(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get())
+            me.add_habit(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), repeat_time=self.repeat_time.get())
         self.top.destroy()        
 
         
@@ -102,7 +122,7 @@ class habitwindow(object):
         self.master=master
         top=self.top=tk.Toplevel(master)
         top.title("Habit bank")
-        self.container=container = ttk.Frame(self.top, width=100, height=100)
+        self.container=container = ttk.Frame(self.top, width=100, height=10)
         container.pack(fill='both', expand=True)
         temp=ttk.Label(container, text="what's up!?")
         #this should just display all the habits so far
@@ -115,25 +135,30 @@ class habitwindow(object):
 #to change width of column drag boundary
 #        """
         msg = ttk.Label(self.top, wraplength="4i", justify="left", anchor="n",
-            padding=(10, 2, 10, 6), text="trying this out")
+            padding=(2, 2, 2, 6), text="Click to add habit to todo list, Ok to finish")
         msg.pack(fill='x')
 
 
+
         # create a treeview with dual scrollbars
-        self.tree = ttk.Treeview(columns=habit_header, show="headings")
+        self.tree = ttk.Treeview(self.top, columns=habit_header, show="headings")
         vsb = ttk.Scrollbar(orient="vertical",
             command=self.tree.yview)
         hsb = ttk.Scrollbar(orient="horizontal",
             command=self.tree.xview)
 
-        self.tree.configure(self.container, yscrollcommand=vsb.set,
+##TODO THE FOLLOWING LINES CAUSE TROUBLE BUT SHOULD BE ADDED BACK IN!
+        self.tree.configure(yscrollcommand=vsb.set,
             xscrollcommand=hsb.set)
-        self.tree.pack()        
+        self.tree.pack()
+        self.b=ttk.Button(self.top,text='Ok',command=self.cleanup)
+        self.b.pack()
 ##        self.tree.grid(column=0, row=0, sticky='nsew', in_=self.top)
 ##        vsb.grid(column=1, row=0, sticky='ns', in_=container)
 ##        hsb.grid(column=0, row=1, sticky='ew', in_=container)
 ##        container.grid_columnconfigure(0, weight=1)
 ##        container.grid_rowconfigure(0, weight=1)
+
 
     def _build_tree(self):
 
@@ -187,41 +212,43 @@ class habitwindow(object):
         item_id = str(self.tree.focus())
 
         item=self.tree.item(item_id)
+        values=item['values']
         uid=item['tags']
         uid=uid[0]
 
-        #TODO adjust popupwindow so you can prepopulate the entries, but you don't have to -- this will also be good for editing items
+        newhabit=me.habitlist[uid]
         
-        self.w=popupwindow(self.master)
+        
+        self.w=popupwindow(self.master, name=newhabit.name, pt_val=newhabit.pt_val, realm=newhabit.realm, context=newhabit.context, repeat="yes", repeat_time=newhabit.repeat_time)
         self.master.wait_window(self.w.top)
 
 
-        #grab the task that was just added to challenge list and put it in the display
-        task_item=me.challengelist[-1]
-#        for task_item in me.challengelist:
-            
-#            print(task_item)
-        item=[]    
-        for col_val in view_header:
-            if col_val == "Task #":
-                item.append(str(task_item.uniq_id))
-            if col_val == "name":
-                item.append(str(task_item.name))
-            if col_val == "realm":
-                item.append(str(task_item.realm))
-            if col_val == "context":
-                item.append(str(task_item.context))
-            if col_val == "points":
-                item.append(str(task_item.pt_val))
-            if col_val == "due date":
-                item.append(str(task_item.due_date))
-            
-        self.tree.insert('', 'end', values=item, tags=(task_item.uniq_id, "uncompleted"))
+##        #grab the task that was just added to challenge list and put it in the display -- Commented out because it's adding the new task (created from the habit bank) to the habit bank
+##        task_item=me.challengelist[-1]
+###        for task_item in me.challengelist:
+##            
+###            print(task_item)
+##        item=[]    
+##        for col_val in view_header:
+##            if col_val == "Task #":
+##                item.append(str(task_item.uniq_id))
+##            if col_val == "name":
+##                item.append(str(task_item.name))
+##            if col_val == "realm":
+##                item.append(str(task_item.realm))
+##            if col_val == "context":
+##                item.append(str(task_item.context))
+##            if col_val == "points":
+##                item.append(str(task_item.pt_val))
+##            if col_val == "due date":
+##                item.append(str(task_item.due_date))
+##            
+##        self.tree.insert('', 'end', values=item, tags=(task_item.uniq_id, "uncompleted"))
 
 
     def cleanup(self):
-        if self.habit=="yes":
-            me.add_habit(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat.get())
+##        if self.habit=="yes":
+##            me.add_habit(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat.get())
         self.top.destroy() 
         
 class MultiColumnListbox(tk.Frame):
@@ -463,8 +490,8 @@ class avatar:
                 f.close()
             else:
                 self.habitlist=[]
-                self.add_habit(name="eat fruit", realm="health", pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y")
-                self.add_habit(name="eat grains", realm="health",  pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y")
+                self.add_habit(name="eat fruit", realm="health", pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="eat grains", realm="health",  pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
             self.save_challenges()
         
         else:
