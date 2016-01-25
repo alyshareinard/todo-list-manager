@@ -21,19 +21,6 @@ import pickle
 from array import array
 
 
-
-#    def add_challenge(self, name=None, pt_val=None, notes=None, context=None, realm=None,\
- #                     subrealm=None, repeat=None, repeat_time=None, repeat_reset=None,\
-  #                    isboss=None, boss=None, unlocked_by=None, date_last_comp=[],\
-   #                   next_active=None, due_date="", active="Y", planned_date="", completed='N'):
-
-
-
-
-
-
-
-
 class popupwindow(object):
     def __init__(self, master, name=None, pt_val=5, realm="work", context=None, duedate=None, repeat=None, repeat_time=None):
        
@@ -60,7 +47,7 @@ class popupwindow(object):
 
         row_val+=1
         #TODO need to make this configurable -- global variable?
-        realms={"home", "well-being", "health", "work"}
+        realms={" ", "home", "well-being", "health", "work"}
         realm_label=ttk.Label(top, text="Realm: ").grid(column=0, row=row_val)
         self.realm=tk.StringVar(master)
         realm_menu=ttk.OptionMenu(top, self.realm, *realms)
@@ -84,7 +71,7 @@ class popupwindow(object):
         due_entry=ttk.Entry(top, textvariable=self.due).grid(column=1, row=row_val)        
 
         row_val+=1
-        rpt={"no", "yes"}
+        rpt={" ", "no", "yes"}
         repeat_label=ttk.Label(top, text="Repeat: ").grid(column=0, row=row_val)
         self.repeat=tk.StringVar(master)
         repeat_menu=ttk.OptionMenu(top, self.repeat, *rpt)
@@ -147,7 +134,6 @@ class habitwindow(object):
         hsb = ttk.Scrollbar(orient="horizontal",
             command=self.tree.xview)
 
-##TODO THE FOLLOWING LINES CAUSE TROUBLE BUT SHOULD BE ADDED BACK IN!
         self.tree.configure(yscrollcommand=vsb.set,
             xscrollcommand=hsb.set)
         self.tree.pack()
@@ -484,14 +470,21 @@ class avatar:
             today=datetime.datetime.combine(date.today(), datetime.time(0, 0)) 
             self.record=points(today, [0, 0, 0, 0])
 
-            if os.path.isfile(directory+"/Life_habit file.txt"):
-                f=open(directory+"/Life_habit_file.txt", 'wb')
-                pickle.dump(self.habitlist, f)
+            if os.path.isfile(directory+"/Life_habit_file.txt"):
+                f=open(directory+"/Life_habit_file.txt", 'rb')
+                self.habitlist=pickle.load(f)
                 f.close()
             else:
                 self.habitlist=[]
                 self.add_habit(name="eat fruit", realm="health", pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
                 self.add_habit(name="eat grains", realm="health",  pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="work inbox <10", realm="work",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="yahoo inbox <50 or delete 50", realm="home",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="read a paper", realm="work",  pt_val=5, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="check urgent, important and this week folders", realm="work",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+                self.add_habit(name="write something", realm="work",  pt_val=10, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+
+
             self.save_challenges()
         
         else:
@@ -531,6 +524,11 @@ class avatar:
             self.habitlist=[]
             self.add_habit(name="eat fruit", realm="health", pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y")
             self.add_habit(name="eat grains", realm="health",  pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y")
+            self.add_habit(name="work inbox <10", realm="work",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+            self.add_habit(name="yahoo inbox <50 or delete 50", realm="home",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+            self.add_habit(name="read a paper", realm="work",  pt_val=5, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+            self.add_habit(name="check urgent, important and this week folders", realm="work",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
+            self.add_habit(name="write something", realm="work",  pt_val=10, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
 
         self.add_challenge_basic(name="finish program edits", realm="well-being", pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)))
         self.add_challenge_basic(name="relax", realm="well-being",  pt_val=1, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)))
@@ -606,51 +604,6 @@ class avatar:
 
             elif option=='Q':
                 return
-
-
-
-##    def make_gui(self):
-##        root=Tk()
-##        root.title("The Game of Life")
-##        root.geometry("800x400")
-##        app=Application(root)
-##        current_realm="work"
-###        menubar=Menu(root)
-##        def change_realm():
-##            print("value is", realm_menu.get())
-##            current_realm=realm_menu.get()
-##            
-##        def about():
-##            print("routine created by Alysha Reinard to improve productivity")
-##        def helpmenu():
-##            print("TBD")
-##
-###        realm_menu=Menu(menubar, tearoff=0)
-###        realm_menu.add_command(label="work", command=change_realm)
-###        realm_menu.add_command(label="home", command=change_realm)
-###        realm_menu.add_command(label="well-being", command=change_realm)
-###        realm_menu.add_command(label="health", command=change_realm)
-###        realm_menu.add_command(label="all", command=change_realm)
-##                              
-###        menubar.add_cascade(label="Realm", menu=realm_menu)
-##        
-##        k=0
-##        for i in range(8):
-##            while self.challengelist[k].realm!=current_realm or self.challengelist[k].active!='Y':
-##                k=k+1
-##            task=self.challengelist[k].short_print
-##            k=k+1
-##            print(k)
-##            var = IntVar()
-##            tasks = Checkbutton(root, text=str(self.challengelist[k].short_print), variable=str(self.challengelist[k].completed))
-##
-###        helpmenu = Menu(menubar, tearoff=0)
-###        helpmenu.add_command(label="About", command=about)
-###        menubar.add_cascade(label="Help", menu=helpmenu)
-###        root.config(menu=menubar)
-##        root.mainloop()
-
-
         
     def add_completed_challenge(self):
         self.add_challenge(completed='Y', active='N')
@@ -1674,7 +1627,7 @@ class avatar:
 
         #keep track of uniq_ids so I can later make the app work using keys instead of just mouse ("click C for complete then the task number", Click A for add then the habit number")
     
-        print("adding a habit")
+#        print("adding a habit")
         comments=[]
         chal_num=len(self.habitlist)
         #uniq_id is just one more than previous challenge
