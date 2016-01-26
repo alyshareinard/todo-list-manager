@@ -22,7 +22,7 @@ from array import array
 
 
 class popupwindow(object):
-    def __init__(self, master, name=None, pt_val=5, realm="work", context=None, duedate=None, repeat=None, repeat_time=None):
+    def __init__(self, master, name=None, pt_val=5, realm="work", context=None, duedate=None, repeat=None, repeat_time=None, repeat_reset=None):
        
         top=self.top=tk.Toplevel(master)
 #        top.geometry('300x600')
@@ -87,7 +87,20 @@ class popupwindow(object):
         rpt_time_entry=ttk.Entry(top, textvariable=self.repeat_time).grid(column=1, row=row_val)
         if repeat_time!=None:
             self.repeat_time.set(repeat_time)
-        
+
+        row_val+=1    
+        rst={" ", "from initiation", "from completion"}
+        rpt_reset_label=ttk.Label(top, text="Repeat reset: ").grid(column=0, row=row_val)
+        self.rst=tk.StringVar(master)
+        rst_menu=ttk.OptionMenu(top, self.rst, *rpt)
+        if repeat_reset!=None:
+            self.rst.set(repeat_reset)
+        else:
+            self.rst.set("from completion")
+        rst_menu.grid(column=1, row=row_val)
+
+
+
         row_val+=1
         self.b=ttk.Button(top,text='Ok',command=self.cleanup)
         self.b.grid(column=0, row=row_val)
@@ -95,9 +108,21 @@ class popupwindow(object):
 
             
     def cleanup(self):
-        me.add_challenge_basic(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat.get(), repeat_time=self.repeat_time.get())
-        print("repeat? ", self.repeat.get())
+        print("Rst is: ", self.rst) #TODO what the heck?
+        if self.rst.get()=="from completion":
+            self.reset=1
+        if self.rst.get()=="from initiation":
+            self.reset=0
         if self.repeat.get()=="yes":
+            self.repeat="Y"
+        elif self.repeat.get()=="no":
+            self.repeat="N"
+        else:
+            self.repeat=self.repeat.get()
+
+        me.add_challenge_basic(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), due_date=self.due.get(), repeat=self.repeat, repeat_time=self.repeat_time.get(), repeat_reset=self.reset)
+        print("repeat? ", self.repeat)
+        if self.repeat=="yes":
             askyesno("Habit?", "Add this to the habit bank?")
             me.add_habit(name=self.name.get(), pt_val=self.pts.get(), realm=self.realm.get(), context=self.context.get(), repeat_time=self.repeat_time.get())
         self.top.destroy()        
@@ -208,28 +233,6 @@ class habitwindow(object):
         self.w=popupwindow(self.master, name=newhabit.name, pt_val=newhabit.pt_val, realm=newhabit.realm, context=newhabit.context, repeat="yes", repeat_time=newhabit.repeat_time)
         self.master.wait_window(self.w.top)
 
-
-##        #grab the task that was just added to challenge list and put it in the display -- Commented out because it's adding the new task (created from the habit bank) to the habit bank
-##        task_item=me.challengelist[-1]
-###        for task_item in me.challengelist:
-##            
-###            print(task_item)
-##        item=[]    
-##        for col_val in view_header:
-##            if col_val == "Task #":
-##                item.append(str(task_item.uniq_id))
-##            if col_val == "name":
-##                item.append(str(task_item.name))
-##            if col_val == "realm":
-##                item.append(str(task_item.realm))
-##            if col_val == "context":
-##                item.append(str(task_item.context))
-##            if col_val == "points":
-##                item.append(str(task_item.pt_val))
-##            if col_val == "due date":
-##                item.append(str(task_item.due_date))
-##            
-##        self.tree.insert('', 'end', values=item, tags=(task_item.uniq_id, "uncompleted"))
 
 
     def cleanup(self):
@@ -483,14 +486,12 @@ class avatar:
                 self.add_habit(name="read a paper", realm="work",  pt_val=5, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
                 self.add_habit(name="check urgent, important and this week folders", realm="work",  pt_val=2, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
                 self.add_habit(name="write something", realm="work",  pt_val=10, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), repeat="Y", repeat_time=1)
-
-
-            self.save_challenges()
         
         else:
         #if no file then initialize object
             self.avatar_initial_setup()
-
+        self.refresh_challenges()
+        self.save_challenges()
 
 
     def avatar_initial_setup(self):
@@ -777,7 +778,7 @@ class avatar:
         return int(num[0])
 
     
-    def complete(self, uniq_id, date_completed=datetime.datetime.combine(date.today(), datetime.time(0, 0))):
+    def complete(self, uniq_id, date_completed=datetime.datetime.combine(date.today(), datetime.time(0, 0)), comments=""):
 
         num=int(self.uniq2index(int(uniq_id)))
         
@@ -785,6 +786,7 @@ class avatar:
             print("this challenge has already been completed! ")
             return
         print("Congratulations on completing ", self.challengelist[num].name)
+        print("repeat is", self.challengelist[num].repeat)
         self.challengelist[num].completed='Y'
         self.challengelist[num].active='N'
         self.challengelist[num].date_completed=date_completed
@@ -794,19 +796,23 @@ class avatar:
             pt_val=float(self.challengelist[num].pt_val)
 #            print("pt_val before update pts: ", pt_val)
 #        comments=input("Any comments? ")
-        if self.challengelist[num].repeat=='N' and comments != "":
+        if (self.challengelist[num].repeat=='N' or self.challengelist[num].repeat=="no") and comments != "":
             self.challengelist[num].comments.append(comments)
         self.update_pts(self.challengelist[num].realm, date_completed, pt_val)
         self.refresh_challenges()
 
-        if self.challengelist[num].repeat=='Y':
+        if self.challengelist[num].repeat=='Y' or self.challengelist[num].repeat=="yes":
+            print("repeat is yes")
             me.chain_length(self.challengelist[num].name, num)
             self.challengelist[num].completed="N"
-            repeat_time=timedelta(days=self.challengelist[num].repeat_time)
-            if self.challengelist[num].repeat_reset==0: #i.e. this resets from time last one appeared
+            repeat_time=timedelta(days=int(self.challengelist[num].repeat_time))
+
+            #repeat_reset allows you to have the reset be x days from the last complete or x days from the last appearance
+            if int(self.challengelist[num].repeat_reset)==0: #i.e. this resets from time last one appeared
                 next_active=self.challengelist[num].date_created+repeat_time
-            if self.challengelist[num].repeat_reset==1:
+            if int(self.challengelist[num].repeat_reset)==1:
                 next_active=datetime.datetime.combine(date.today()+repeat_time, datetime.time(0, 0))
+                print("setting to be active tomorrow")
             if not hasattr(me.challengelist[num], 'notes'):
                 self.challengelist[num].notes=[]
             if self.challengelist[num].comments==None:
@@ -932,7 +938,7 @@ class avatar:
                     print(self.challengelist[i].date_completed)
                 dates.append(self.challengelist[i].date_completed)
         length=range(count-1, 0, -1)
-        one_day=timedelta(days=self.challengelist[last].repeat_time)
+        one_day=timedelta(days=int(self.challengelist[last].repeat_time))
         old_date=dates[count-1]
         count2=1
         #now count backwards through the dates you've collected and see how long they are sequential (i.e. to see
@@ -1234,7 +1240,6 @@ class avatar:
         length=range(len(self.challengelist))
         for i in length:
             if self.challengelist[i].active =="N" and self.challengelist[i].completed =="N":
-#                print(self.challengelist[i].next_active)
                #first check if the next active date has arrived
 #                print(i)
                 if self.challengelist[i].next_active != None and self.challengelist[i].next_active<=today:
@@ -1621,7 +1626,7 @@ class avatar:
         self.save_challenges()
 
     def add_habit(self, name=None, pt_val=None, notes=None, context=None, realm="None",\
-                      subrealm="None", repeat="Y", repeat_time=1, repeat_reset=None,\
+                      subrealm="None", repeat="Y", repeat_time=1, repeat_reset=1,\
                       isboss=None, boss=None, unlocked_by=None, date_last_comp=[],\
                       next_active=None, date_created=datetime.datetime.combine(date.today(), datetime.time(0, 0)), due_date="", active="Y", planned_date="", completed='N'):
 
@@ -1637,7 +1642,6 @@ class avatar:
             uniq_id=0
         else:
             print("this list has a negative length")
-
 
         self.habitlist.append(task(name=name, notes=notes, context=context, \
                                        pt_val=pt_val, realm=realm.lower(), \
