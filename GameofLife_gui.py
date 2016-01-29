@@ -99,16 +99,11 @@ class popupwindow(object):
             self.rst.set("from completion")
         rst_menu.grid(column=1, row=row_val)
 
-
-
         row_val+=1
         self.b=ttk.Button(top,text='Ok',command=self.cleanup)
         self.b.grid(column=0, row=row_val)
-
-
             
     def cleanup(self):
-        print("Rst is: ", self.rst) #TODO what the heck?
         if self.rst.get()=="from completion":
             self.reset=1
         if self.rst.get()=="from initiation":
@@ -229,11 +224,8 @@ class habitwindow(object):
 
         newhabit=me.habitlist[uid]
         
-        
         self.w=popupwindow(self.master, name=newhabit.name, pt_val=newhabit.pt_val, realm=newhabit.realm, context=newhabit.context, repeat="yes", repeat_time=newhabit.repeat_time)
         self.master.wait_window(self.w.top)
-
-
 
     def cleanup(self):
 ##        if self.habit=="yes":
@@ -354,7 +346,7 @@ class MultiColumnListbox(tk.Frame):
         uid=uid[0]
         completed=0
         completed=me.toggle_completed(uid)
-
+        active=me.get_active(uid)
 
         if completed=="Y":
             temp_val=item['values']
@@ -380,7 +372,8 @@ class MultiColumnListbox(tk.Frame):
 
         for task_item in me.challengelist:
             #skip completed challenges if no_completed is True
-            if not (self.no_completed==True and task_item.completed=="Y"):
+            if task_item.active=="Y" and task_item.completed=="N":
+            #if not (self.no_completed==True and task_item.completed=="Y"):
                 item=[]
 #                print(task_item.uniq_id)
 #                print(view_header)
@@ -434,8 +427,6 @@ def sortby(tree, col, descending):
     # switch the heading so it will sort in the opposite direction
     tree.heading(col, command=lambda col=col: sortby(tree, col, \
         int(not descending)))
-
-
 
 
 class avatar:
@@ -838,23 +829,23 @@ class avatar:
 
             self.challengelist[num].next_active=next_active
             self.challengelist[num].active="N"
-#            self.add_challenge(name=self.challengelist[num].name, \
-#                               context=self.challengelist[num].context, \
-#                               pt_val=self.challengelist[num].pt_val,\
-#                               realm=self.challengelist[num].realm, \
-#                               subrealm=self.challengelist[num].subrealm, \
-#                               repeat=self.challengelist[num].repeat, \
-#                               repeat_time=self.challengelist[num].repeat_time, \
-#                               repeat_reset=self.challengelist[num].repeat_reset, \
-#                               isboss=self.challengelist[num].isboss, \
-#                               boss=self.challengelist[num].boss, \
-#                               date_last_comp=date_completed , \
-#                               active="N",\
-#                               notes="",\
-#                               unlocked_by=[],\
-#                               due_date=None,\
-#                               planned_date=None,\
-#                               next_active=next_active)
+            self.add_challenge(name=self.challengelist[num].name, \
+                               context=self.challengelist[num].context, \
+                               pt_val=self.challengelist[num].pt_val,\
+                               realm=self.challengelist[num].realm, \
+                               subrealm=self.challengelist[num].subrealm, \
+                               repeat=self.challengelist[num].repeat, \
+                               repeat_time=self.challengelist[num].repeat_time, \
+                               repeat_reset=self.challengelist[num].repeat_reset, \
+                               isboss=self.challengelist[num].isboss, \
+                               boss=self.challengelist[num].boss, \
+                               date_last_comp=date_completed , \
+                               active="N",\
+                               notes="",\
+                               unlocked_by=[],\
+                               due_date=None,\
+                               planned_date=None,\
+                               next_active=next_active)
 
         self.save_challenges()
 
@@ -966,6 +957,8 @@ class avatar:
                 print(self.challengelist[i].uniq_id, self.challengelist[i].short_print())
         print(str(count)+" active challenges")
 
+    def get_active(self, uid):
+        return self.challengelist[uid].active
 
     def print_sorted(self):
         length=range(len(self.challengelist))
@@ -1235,17 +1228,21 @@ class avatar:
 #                print(" ")
 
     def refresh_challenges(self):
+        print("in refresh challenges")
 #        today=datetime.datetime.combine(datetime.datetime.combine(date.today(), datetime.time(0, 0)), datetime.time(0, 0)) 
         today=datetime.datetime.combine(date.today(), datetime.time(0, 0))
         length=range(len(self.challengelist))
         for i in length:
+            print("i?", i)
+            print("active?", self.challengelist[i].active)
+            print("completed?", self.challengelist[i].completed)
             if self.challengelist[i].active =="N" and self.challengelist[i].completed =="N":
                #first check if the next active date has arrived
-#                print(i)
+                print(i)
                 if self.challengelist[i].next_active != None and self.challengelist[i].next_active<=today:
                     self.challengelist[i].active="Y"
                 #now check if a recently completed challenge has unlocked something new
-                if self.challengelist[i].unlocked_by != "" and self.challengelist[i].unlocked_by !=[]:
+                if self.challengelist[i].unlocked_by != "" and self.challengelist[i].unlocked_by !=[] and self.challengelist[i].unlocked_by!=None:
 #                    print("in loop for item", i)
                     #TODO not unlocking challenges it should unlock
                     all_complete="Y"
