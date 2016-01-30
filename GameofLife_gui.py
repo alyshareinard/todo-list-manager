@@ -9,6 +9,7 @@ except ImportError:
     import Tkinter.font as tkFont
     import Tkinter.ttk as ttk
     from tkMessageBox import *
+    
 import sys
 import time
 from datetime import date
@@ -19,7 +20,6 @@ import os
 #from button import *
 import pickle
 from array import array
-
 
 class popupwindow(object):
     def __init__(self, master, name=None, pt_val=5, realm="work", context=None, duedate=None, repeat=None, repeat_time=None, repeat_reset=None):
@@ -35,8 +35,6 @@ class popupwindow(object):
         name_entry=ttk.Entry(top, textvariable=self.name).grid(column=1, row=row_val)
         if name!=None:
             self.name.set(name)
-#        print("adding name: ", self.name)
-
         
         row_val+=1
         pt_val_label=ttk.Label(top, text="Point value: ").grid(column=0, row=row_val)
